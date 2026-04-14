@@ -1,4 +1,4 @@
-// models/User.js — Student & Client user model
+// models/User.js — UPDATED with College Verification fields
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -14,7 +14,18 @@ const userSchema = new mongoose.Schema({
   role:       { type: String, enum: ['student', 'client'], required: true },
   city:       { type: String, trim: true },
   profilePhoto: { type: String, default: '' },
-  isVerified: { type: Boolean, default: false },
+
+  // ── COLLEGE VERIFICATION (NEW) ──
+  isVerified:       { type: Boolean, default: false },       // admin ne verify kiya
+  verificationStatus: {
+    type: String,
+    enum: ['unverified', 'pending', 'verified', 'rejected'],
+    default: 'unverified',
+  },
+  collegeIdImage:   { type: String, default: '' },           // uploaded college ID photo URL
+  collegeEmail:     { type: String, default: '' },           // .edu or college email (optional)
+  verifiedAt:       { type: Date },
+  verificationNote: { type: String },                        // admin ka note (if rejected)
 
   // ── STUDENT FIELDS ──
   college:      { type: String },
@@ -28,6 +39,15 @@ const userSchema = new mongoose.Schema({
   portfolioUrl: { type: String },
   isPro:        { type: Boolean, default: false },
 
+  // ── COLLABORATION (NEW) ──
+  // Students I have collaborated with
+  collaboratedWith: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  openToCollaborate: { type: Boolean, default: true },   // kya main dusron ki help karna chahta hoon
+  collaborationSkills: [{ type: String }],               // jin skills mein help kar sakta hoon
+
   // ── CLIENT FIELDS ──
   company:      { type: String },
   designation:  { type: String },
@@ -39,11 +59,11 @@ const userSchema = new mongoose.Schema({
   typicalBudget: { type: Number },
 
   // ── STATS ──
-  totalEarned:    { type: Number, default: 0 },   // students
-  totalSpent:     { type: Number, default: 0 },   // clients
+  totalEarned:       { type: Number, default: 0 },
+  totalSpent:        { type: Number, default: 0 },
   completedProjects: { type: Number, default: 0 },
-  avgRating:      { type: Number, default: 0 },
-  ratingCount:    { type: Number, default: 0 },
+  avgRating:         { type: Number, default: 0 },
+  ratingCount:       { type: Number, default: 0 },
 
 }, { timestamps: true });
 
@@ -55,17 +75,10 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-// Compare password method
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.matchPassword = async function(entered) {
+  return await bcrypt.compare(entered, this.password);
 };
 
-// Virtual: full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
-
-// Don't send password in responses
 userSchema.methods.toJSON = function() {
   const obj = this.toObject();
   delete obj.password;
