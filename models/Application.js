@@ -1,4 +1,4 @@
-// models/Application.js — Student project application model
+// models/Application.js — UPDATED with Bidding fields
 
 const mongoose = require('mongoose');
 
@@ -15,16 +15,30 @@ const applicationSchema = new mongoose.Schema({
     required: true,
   },
 
-  // ── APPLICATION CONTENT ──
-  coverLetter: { type: String, maxlength: 1000 },
-  bidAmount:   { type: Number },          // student's proposed price
-  timeline:    { type: String },          // student's proposed timeline
+  // ── BIDDING FIELDS (NEW) ──
+  bidAmount:      { type: Number, required: true },   // student ka proposed price
+  proposedDays:   { type: Number, required: true },   // kitne din mein karenga
+  coverLetter:    { type: String, maxlength: 1500 },  // detailed proposal (long)
+  milestones:     [{ title: String, days: Number }],  // optional: breakdown
 
   // ── STATUS ──
   status: {
     type: String,
     enum: ['submitted', 'under_review', 'shortlisted', 'accepted', 'rejected'],
     default: 'submitted',
+  },
+
+  // ── COLLABORATION (NEW) ──
+  // Student can add a co-freelancer to help them
+  collaborator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  collaboratorStatus: {
+    type: String,
+    enum: ['pending', 'accepted', 'declined'],
+    default: 'pending',
   },
 
   // ── REVIEW (after completion) ──
